@@ -1,47 +1,39 @@
-import { Pool } from 'pg';
+import { DatabaseSync, SQLInputValue } from 'node:sqlite';
 import { Incident, IncidentFilters, IncidentsRepository, Pagination, PagedResult } from './incidents.types';
 
-export class PgIncidentsRepository implements IncidentsRepository {
-  constructor(private readonly pool: Pool) {}
+export class SqliteIncidentsRepository implements IncidentsRepository {
+  constructor(private readonly db: DatabaseSync) {}
 
   async findAll(filters: IncidentFilters, pagination: Pagination): Promise<PagedResult<Incident>> {
     const conditions: string[] = [];
-    const params: unknown[] = [];
+    const params: SQLInputValue[] = [];
 
     if (filters.status) {
+      conditions.push('status = ?');
       params.push(filters.status);
-      conditions.push(`status = $${params.length}`);
     }
     if (filters.severity) {
+      conditions.push('severity = ?');
       params.push(filters.severity);
-      conditions.push(`severity = $${params.length}`);
     }
     if (filters.assignee) {
+      conditions.push('assignee = ?');
       params.push(filters.assignee);
-      conditions.push(`assignee = $${params.length}`);
     }
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const countResult = await this.pool.query<{ count: string }>(
-      `SELECT count(*) FROM incidents ${where}`,
-      params,
-    );
-    const total = Number(countResult.rows[0].count);
+    const { count } = this.db
+      .prepare(`SELECT count(*) AS count FROM incidents ${where}`)
+      .get(...params) as unknown as { count: number };
 
-    params.push(pagination.limit);
-    const limitIdx = params.length;
-    params.push(pagination.offset);
-    const offsetIdx = params.length;
-
-    const dataResult = await this.pool.query<Incident>(
-      `SELECT * FROM incidents ${where} ORDER BY created_at DESC LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
-      params,
-    );
+    const data = this.db
+      .prepare(`SELECT * FROM incidents ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`)
+      .all(...params, pagination.limit, pagination.offset) as unknown as Incident[];
 
     return {
-      data: dataResult.rows,
-      total,
+      data,
+      total: count,
       limit: pagination.limit,
       offset: pagination.offset,
     };

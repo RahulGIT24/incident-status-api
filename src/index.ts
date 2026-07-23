@@ -1,8 +1,8 @@
 import { createApp } from './app';
-import { pool } from './db';
-import { PgIncidentsRepository } from './incidents/incidents.repository';
+import { db } from './db';
+import { SqliteIncidentsRepository } from './incidents/incidents.repository';
 
-const app = createApp(new PgIncidentsRepository(pool));
+const app = createApp(new SqliteIncidentsRepository(db));
 const port = process.env.PORT ?? 3000;
 
 app.listen(port, () => {

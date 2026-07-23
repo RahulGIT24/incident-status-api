@@ -4,12 +4,13 @@ A small service for tracking incidents: title, severity, status, assignee, and r
 
 ## Setup
 
+No Docker, no separate database server — this uses SQLite via Node's built-in `node:sqlite`, a single file on disk. **Requires Node 22.5+** (check with `node --version`).
+
 ```bash
 cp .env.example .env
-docker compose up -d
 npm install
-npm run migrate:up
-npm run seed
+npm run db:setup
+npm run dev
 ```
 
 The API is now running at `http://localhost:3000`. Try it:
@@ -30,7 +31,7 @@ Tests run against an in-memory fake repository, not the database, so no running 
 
 - `GET /incidents` — paginated (`limit`, `offset`), filterable by `status`, `severity`, `assignee`.
 - Layering: `incidents.controller.ts` (HTTP) → `incidents.service.ts` (pagination/defaults) → `incidents.repository.ts` (SQL).
-- Migration for the `incidents` table (`migrations/`), seed data covering all severities/statuses over the last 30 days (`migrations/seed.sql`).
+- Schema for the `incidents` table (`db/schema.sql`) plus a seed script (`npm run db:setup`) covering all severities/statuses spread over the last 30 days.
 
 ---
 
@@ -88,6 +89,7 @@ Requirements:
 - **Single SQL query.** No fetching rows and averaging in application code.
 - Use a CTE or window function — whichever you find more readable, but be ready to explain the choice.
 - Response shape is up to you; make it easy to read (e.g. one row per severity with an average).
+- Hint: SQLite has no interval/epoch type. `julianday(x)` converts a timestamp string to a floating-point day count, so `(julianday(a) - julianday(b)) * 24 * 60` gives you minutes between two timestamps.
 
 **Example:**
 
@@ -128,4 +130,9 @@ curl -X PATCH http://localhost:3000/incidents/<id>/status \
 
 ### Task 4 — Discussion only, no code (5 min)
 
-This endpoint suddenly gets hit at 500 req/sec — for example, a status page that polls `GET /incidents` every second from thousands of open browser tabs. What breaks first, and how would you fix it? We'll talk through it together — think connection pools, indexes, caching, and what you'd actually reach for first under time pressure.
+This starter uses SQLite for zero-setup local dev — no Docker, no separate DB process. Two questions:
+
+1. This endpoint suddenly gets hit at 500 req/sec — for example, a status page that polls `GET /incidents` every second from thousands of open browser tabs. What breaks first, and how would you fix it?
+2. Independent of load: what would you change about the database choice itself before this went anywhere near production?
+
+We'll talk through it together — think about what SQLite specifically gives up compared to a client-server database, and what you'd actually reach for first under time pressure.
