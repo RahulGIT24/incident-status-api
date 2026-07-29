@@ -84,12 +84,7 @@ curl -X PATCH http://localhost:3000/incidents/<id>/status \
 
 Add `GET /incidents/stats` returning the average time-to-resolution, in minutes, grouped by severity — for incidents that have been resolved.
 
-Requirements:
-
-- **Single SQL query.** No fetching rows and averaging in application code.
-- Use a CTE or window function — whichever you find more readable, but be ready to explain the choice.
-- Response shape is up to you; make it easy to read (e.g. one row per severity with an average).
-- Hint: SQLite has no interval/epoch type. `julianday(x)` converts a timestamp string to a floating-point day count, so `(julianday(a) - julianday(b)) * 24 * 60` gives you minutes between two timestamps.
+Hint: SQLite has no interval/epoch type. `julianday(x)` converts a timestamp string to a floating-point day count, so `(julianday(a) - julianday(b)) * 24 * 60` gives you minutes between two timestamps.
 
 **Example:**
 
