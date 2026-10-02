@@ -102,6 +102,12 @@ curl http://localhost:3000/incidents/stats
 ]
 ```
 
+SELECT severity, COUNT(resolved_count), AVG((julianday(a) - julianday(b)) * 24 * 60) AS avg_resolution_minutes, status
+FROM Incidents
+where status ='resolved'
+GROUP BY severity
+ORDER BY avg_resolution_minutes
+
 ### Task 3 — Concurrent update race (10 min)
 
 Two clients `PATCH` the same incident's status at nearly the same time. Handle it correctly using the `version` column already on the table:

@@ -8,6 +8,7 @@ export function incidentsRoutes(repository: IncidentsRepository): Router {
   const controller = new IncidentsController(new IncidentsService(repository));
 
   router.get('/incidents', controller.list);
+  router.patch('/incidents/:id/status',controller.status)
 
   return router;
 }

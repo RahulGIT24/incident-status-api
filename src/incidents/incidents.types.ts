@@ -1,3 +1,5 @@
+import { UUID } from "crypto";
+
 export type Severity = 'low' | 'medium' | 'high' | 'critical';
 export type Status = 'open' | 'acknowledged' | 'resolved';
 
@@ -31,5 +33,7 @@ export interface PagedResult<T> {
 }
 
 export interface IncidentsRepository {
+  findTask(id:UUID):any
+  updateStatus(id:UUID,status:string):any
   findAll(filters: IncidentFilters, pagination: Pagination): Promise<PagedResult<Incident>>;
 }

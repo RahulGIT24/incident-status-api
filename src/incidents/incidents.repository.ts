@@ -1,8 +1,9 @@
 import { DatabaseSync, SQLInputValue } from 'node:sqlite';
 import { Incident, IncidentFilters, IncidentsRepository, Pagination, PagedResult } from './incidents.types';
+import { UUID } from 'crypto';
 
 export class SqliteIncidentsRepository implements IncidentsRepository {
-  constructor(private readonly db: DatabaseSync) {}
+  constructor(private readonly db: DatabaseSync) { }
 
   async findAll(filters: IncidentFilters, pagination: Pagination): Promise<PagedResult<Incident>> {
     const conditions: string[] = [];
@@ -37,5 +38,36 @@ export class SqliteIncidentsRepository implements IncidentsRepository {
       limit: pagination.limit,
       offset: pagination.offset,
     };
+  }
+
+  findTask(id: UUID) {
+    const params: SQLInputValue[] = [];
+    const conditions: string[] = [];
+    params.push(id)
+    conditions.push('id = ?')
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const data = this.db
+      .prepare(`SELECT * FROM incidents ${where}`)
+      .get(...params)
+    return { data }
+  }
+  updateStatus(id: UUID, status: string) {
+    const params: SQLInputValue[] = [];
+    let q = `UPDATE incidents SET status = ? `
+    params.push(status)
+
+    if (status === 'resolved') {
+      const date = new Date().toDateString()
+      q += `, resolved_at = ? `
+      params.push(date)
+    }
+    q += ` where id = ? RETURNING *`
+    params.push(id)
+
+    const data = this.db
+      .prepare(q)
+      .get(...params)
+    console.log(data)
+    return { data }
   }
 }

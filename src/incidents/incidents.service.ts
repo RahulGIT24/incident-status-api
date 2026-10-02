@@ -1,3 +1,4 @@
+import { UUID } from 'crypto';
 import { IncidentFilters, IncidentsRepository, Pagination } from './incidents.types';
 
 const MAX_LIMIT = 100;
@@ -11,5 +12,13 @@ export class IncidentsService {
     const offset = rawPagination.offset ?? 0;
 
     return this.repository.findAll(rawFilters, { limit, offset });
+  }
+
+  findById(id:UUID){
+    return this.repository.findTask(id)
+  }
+
+  updateStatus(id:UUID,status:string){
+    return this.repository.updateStatus(id,status)
   }
 }
